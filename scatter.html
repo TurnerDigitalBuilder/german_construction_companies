@@ -82,7 +82,7 @@
 </head>
 <body>
 
-<!-- Link to switch to the Scatter Plot page -->
+<!-- Link to switch to the Line Chart page -->
 <div id="page-switcher">
     <a href="line.html">Go to Line Chart</a>
 </div>
@@ -94,9 +94,12 @@
     <button id="clearButton">Clear</button>
 
     <h3>Toggle Performance Lines</h3>
-    <label><input type="checkbox" id="toggleTotal" checked> Total Performance</label><br>
-    <label><input type="checkbox" id="toggleForeign" checked> Foreign Performance</label><br>
-    <label><input type="checkbox" id="toggleGerman" checked> German Performance</label>
+    <label><input type="checkbox" id="toggleTotal" checked> Total Performance (Blue)</label><br>
+    <label><input type="checkbox" id="toggleForeign" checked> Foreign Performance (Green)</label><br>
+    <label><input type="checkbox" id="toggleGerman" checked> German Performance (Orange)</label>
+
+    <h3>Y-Axis Scale</h3>
+    <label><input type="checkbox" id="toggleLogScale"> Logarithmic Scale</label><br>
 </div>
 
 <div id="chart">
@@ -129,6 +132,10 @@ document.addEventListener("DOMContentLoaded", function() {
         renderChart(jsonData);
     });
 
+    document.getElementById('toggleLogScale').addEventListener('change', function() {
+        renderChart(jsonData); // Redraw the chart when Y-axis scale is toggled
+    });
+
     function setupCompanySelect(data) {
         const companySelect = document.getElementById('companySelect');
         data.forEach(company => {
@@ -151,7 +158,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // Render the scatter plot based on selected performance toggles
     function renderChart(data) {
         const svg = d3.select("svg"),
             width = svg.node().getBoundingClientRect().width,
@@ -168,22 +174,19 @@ document.addEventListener("DOMContentLoaded", function() {
                 let startingValue = company.Revenue[2011] && company.Revenue[2011]["Total Performance (Million Euros)"];
 
                 if (totalPerformance && startingValue && startingValue > 0) {
-                    // Calculate CAGR for total, foreign, and German
                     let totalCAGR = calculateCAGR(startingValue, totalPerformance, 2023 - 2011);
                     
-                    // Foreign and German performance calculations
                     let foreignPerformance = totalPerformance * (company.Revenue[2023]["Foreign Performance (%)"] / 100) || 0;
                     let germanPerformance = totalPerformance - foreignPerformance;
 
                     let foreignCAGR = calculateCAGR(startingValue * (company.Revenue[2011]["Foreign Performance (%)"] / 100), foreignPerformance, 2023 - 2011);
                     let germanCAGR = calculateCAGR(startingValue * (1 - company.Revenue[2011]["Foreign Performance (%)"] / 100), germanPerformance, 2023 - 2011);
 
-                    // Add data based on selected toggles
                     if (showTotal) {
                         companyDataList.push({
                             company: company.Company,
                             performance: totalPerformance,
-                            cagr: isNaN(totalCAGR) ? 0 : totalCAGR, // Ensure CAGR is a valid number
+                            cagr: isNaN(totalCAGR) ? 0 : totalCAGR,
                             type: "Total Performance"
                         });
                     }
@@ -191,7 +194,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         companyDataList.push({
                             company: company.Company,
                             performance: foreignPerformance,
-                            cagr: isNaN(foreignCAGR) ? 0 : foreignCAGR, // Ensure CAGR is a valid number
+                            cagr: isNaN(foreignCAGR) ? 0 : foreignCAGR,
                             type: "Foreign Performance"
                         });
                     }
@@ -199,7 +202,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         companyDataList.push({
                             company: company.Company,
                             performance: germanPerformance,
-                            cagr: isNaN(germanCAGR) ? 0 : germanCAGR, // Ensure CAGR is a valid number
+                            cagr: isNaN(germanCAGR) ? 0 : germanCAGR,
                             type: "German Performance"
                         });
                     }
@@ -207,21 +210,22 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
 
+        const useLogScale = document.getElementById('toggleLogScale').checked;
+
         const xScale = d3.scaleLinear()
             .domain([d3.min(companyDataList, d => d.cagr) - 2, d3.max(companyDataList, d => d.cagr) + 2])
             .range([margin.left, width - margin.right]);
 
-        const yScale = d3.scaleLinear()
-            .domain([0, d3.max(companyDataList, d => d.performance)])  // Adjusted the domain for linear scale
-            .range([height - margin.bottom, margin.top]);
-
-        const rScale = d3.scaleSqrt()
-            .domain([0, d3.max(companyDataList, d => d.performance)])
-            .range([5, 20]); // Dot sizes will vary between 5 and 20 based on performance
+        const yScale = useLogScale ? 
+            d3.scaleLog()
+                .domain([Math.max(1, d3.min(companyDataList, d => d.performance)), d3.max(companyDataList, d => d.performance)])
+                .range([height - margin.bottom, margin.top]) :
+            d3.scaleLinear()
+                .domain([0, d3.max(companyDataList, d => d.performance)])
+                .range([height - margin.bottom, margin.top]);
 
         const xAxis = d3.axisBottom(xScale).ticks(10);
-        const yAxis = d3.axisLeft(yScale)
-            .ticks(10, d3.format(".0s")); // Use ".0s" for better scale labels
+        const yAxis = useLogScale ? d3.axisLeft(yScale).ticks(10, d3.format(".0s")) : d3.axisLeft(yScale).ticks(10);
 
         svg.append("g")
             .attr("transform", `translate(0, ${height - margin.bottom})`)
@@ -244,9 +248,6 @@ document.addEventListener("DOMContentLoaded", function() {
             .text("Performance (Million €)")
             .attr("class", "axis-label");
 
-        const avgCAGR = d3.mean(companyDataList, d => d.cagr);
-        const avgPerformance = d3.mean(companyDataList, d => d.performance);
-
         // Dashed red line at 0% CAGR
         svg.append("line")
             .attr("x1", xScale(0))
@@ -256,6 +257,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .attr("class", "dashed-line");
 
         // Dashed green line for the average CAGR
+        const avgCAGR = d3.mean(companyDataList, d => d.cagr);
         svg.append("line")
             .attr("x1", xScale(avgCAGR))
             .attr("x2", xScale(avgCAGR))
@@ -263,7 +265,6 @@ document.addEventListener("DOMContentLoaded", function() {
             .attr("y2", height - margin.bottom)
             .attr("class", "average-line");
 
-        // Add average CAGR text
         svg.append("text")
             .attr("x", xScale(avgCAGR) + 5)
             .attr("y", margin.top + 15)
@@ -272,6 +273,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .attr("class", "axis-label");
 
         // Dashed green line for the average performance
+        const avgPerformance = d3.mean(companyDataList, d => d.performance);
         svg.append("line")
             .attr("x1", margin.left)
             .attr("x2", width - margin.right)
@@ -280,7 +282,6 @@ document.addEventListener("DOMContentLoaded", function() {
             .attr("class", "average-line")
             .attr("stroke-width", 1);
 
-        // Add average performance text
         svg.append("text")
             .attr("x", margin.left + 5)
             .attr("y", yScale(avgPerformance) - 10)
@@ -296,9 +297,8 @@ document.addEventListener("DOMContentLoaded", function() {
             .append("circle")
             .attr("cx", d => xScale(d.cagr))
             .attr("cy", d => yScale(d.performance))
-            .attr("r", d => rScale(d.performance)) // Use performance to size the circles
+            .attr("r", 5)
             .attr("fill", (d) => {
-                // Assign different colors based on performance type
                 if (d.type === "Total Performance") return "steelblue";
                 if (d.type === "Foreign Performance") return "green";
                 if (d.type === "German Performance") return "orange";
@@ -315,26 +315,23 @@ document.addEventListener("DOMContentLoaded", function() {
                 tooltip.style("display", "none");
             });
 
-        // Add company names next to the dots
         svg.selectAll(".company-label")
             .data(companyDataList)
             .enter()
             .append("text")
-            .attr("x", d => xScale(d.cagr) + 5) // Position slightly to the right of the dot
-            .attr("y", d => yScale(d.performance) - 5) // Position slightly above the dot
+            .attr("x", d => xScale(d.cagr) + 5)
+            .attr("y", d => yScale(d.performance) - 5)
             .text(d => d.company)
             .attr("class", "company-label");
     }
 
-    // Same CAGR calculation function as the line chart
     function calculateCAGR(initialValue, finalValue, numberOfYears) {
         if (initialValue === 0 || finalValue === 0 || numberOfYears === 0) {
             return 0;
         }
-        return ((Math.pow(finalValue / initialValue, 1 / numberOfYears) - 1) * 100); // Ensure the result is a number
+        return ((Math.pow(finalValue / initialValue, 1 / numberOfYears) - 1) * 100);
     }
 
-    // Render initially
     renderChart(jsonData);
     setupCompanySelect(jsonData);
 });
