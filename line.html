@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Top Construction Companies Data (2011-2023)</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="data.js"></script>
     <style>
         body, html {
             margin: 0;
@@ -78,9 +80,9 @@
         <button id="clearButton">Clear</button>
 
         <h3>Toggle Performance Lines</h3>
-        <label><input type="checkbox" id="toggleTotal" checked> Total Performance</label><br>
-        <label><input type="checkbox" id="toggleForeign" checked> Foreign Performance</label><br>
-        <label><input type="checkbox" id="toggleGerman" checked> German Performance</label>
+        <label><input type="checkbox" id="toggleGerman" checked> German Performance</label><br>
+        <label><input type="checkbox" id="toggleForeign"> Foreign Performance</label><br>
+        <label><input type="checkbox" id="toggleTotal"> Total Performance</label>
 
         <h3>Y-Axis Scale</h3>
         <label><input type="checkbox" id="toggleLogScale"> Logarithmic Scale</label><br>
@@ -92,68 +94,72 @@
     </div>
 
     <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let jsonData = typeof companyData !== 'undefined' ? companyData : null;
-        const tooltip = d3.select("#tooltip");
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch('data.json')
+                .then(response => response.json())
+                .then(data => {
+                    window.companyData = data; // Assign the data to window.companyData for consistency
+                    setupCompanySelect(window.companyData);
+                    renderChart(window.companyData);
+                })
+                .catch(error => console.error('Error loading JSON data:', error));
+        });
 
         const startYear = 2011;
         const endYear = 2023;
-        let selectedCompanies = new Set();
-
-        // Variables to track whether lines should be shown
-        let showTotal = true;
-        let showForeign = true;
+        let showTotal = false;
+        let showForeign = false;
         let showGerman = true;
 
-        if (jsonData) {
-            setupCompanySelect(jsonData);
-            renderChart(jsonData);
-        }
-
-        // Setup event listeners for the toggles
-        document.getElementById('toggleTotal').addEventListener('change', function() {
-            showTotal = this.checked;
-            renderChart(jsonData);
-        });
-        document.getElementById('toggleForeign').addEventListener('change', function() {
-            showForeign = this.checked;
-            renderChart(jsonData);
-        });
-        document.getElementById('toggleGerman').addEventListener('change', function() {
-            showGerman = this.checked;
-            renderChart(jsonData);
-        });
-        document.getElementById('toggleLogScale').addEventListener('change', function() {
-            renderChart(jsonData); // Redraw the chart when the scale toggle changes
-        });
+        // Variables to track selected companies
+        let selectedCompanies = new Set();
 
         function setupCompanySelect(data) {
             const companySelect = document.getElementById('companySelect');
-            data.forEach(company => {
+            data.forEach((company, index) => {
                 const option = document.createElement('option');
                 option.value = company.Company;
                 option.textContent = company.Company;
+                if (index < 20) {
+                    option.selected = true;
+                    selectedCompanies.add(company.Company);
+                }
                 companySelect.appendChild(option);
             });
 
             companySelect.addEventListener('change', function() {
                 selectedCompanies.clear();
                 Array.from(this.selectedOptions).forEach(option => selectedCompanies.add(option.value));
-                renderChart(jsonData);
+                renderChart(window.companyData);
             });
 
             document.getElementById('clearButton').addEventListener('click', function() {
                 selectedCompanies.clear();
                 Array.from(companySelect.options).forEach(option => option.selected = false);
-                renderChart(jsonData);
+                renderChart(window.companyData);
             });
         }
 
-        function calculateCAGR(initialValue, finalValue, numberOfYears) {
-            if (initialValue === 0 || finalValue === 0 || numberOfYears === 0) {
-                return 0;
-            }
-            return ((Math.pow(finalValue / initialValue, 1 / numberOfYears) - 1) * 100).toFixed(2); // Returns CAGR as a percentage with 2 decimals
+        // Setup event listeners for the toggles
+        document.getElementById('toggleTotal').addEventListener('change', function() {
+            showTotal = this.checked;
+            renderChart(window.companyData);
+        });
+        document.getElementById('toggleForeign').addEventListener('change', function() {
+            showForeign = this.checked;
+            renderChart(window.companyData);
+        });
+        document.getElementById('toggleGerman').addEventListener('change', function() {
+            showGerman = this.checked;
+            renderChart(window.companyData);
+        });
+        document.getElementById('toggleLogScale').addEventListener('change', function() {
+            renderChart(window.companyData); // Redraw the chart when the scale toggle changes
+        });
+
+        function calculateCAGR(startValue, endValue, years) {
+            if (startValue <= 0 || endValue <= 0 || years <= 0) return null;
+            return (((endValue / startValue) ** (1 / years)) - 1) * 100;
         }
 
         function renderChart(data) {
@@ -257,33 +263,35 @@
                 .x(d => xScale(d.year))
                 .y(d => yScale(d.germanPerformance));
 
+            const tooltip = d3.select("#tooltip");
+
             companyDataList.forEach((company, i) => {
                 const firstYearData = company.revenueData[0];
                 const lastYearData = company.revenueData[company.revenueData.length - 1];
                 const numberOfYears = lastYearData.year - firstYearData.year;
 
                 // Calculate CAGR for each line (Total, Foreign, German)
-                const cagrTotal = showTotal ? calculateCAGR(firstYearData.totalPerformance, lastYearData.totalPerformance, numberOfYears) : null;
-                const cagrForeign = showForeign ? calculateCAGR(firstYearData.foreignPerformance, lastYearData.foreignPerformance, numberOfYears) : null;
-                const cagrGerman = showGerman ? calculateCAGR(firstYearData.germanPerformance, lastYearData.germanPerformance, numberOfYears) : null;
+                const cagrTotal = showTotal ? parseFloat(calculateCAGR(firstYearData.totalPerformance, lastYearData.totalPerformance, numberOfYears).toFixed(2)) : null;
+                const cagrForeign = showForeign ? parseFloat(calculateCAGR(firstYearData.foreignPerformance, lastYearData.foreignPerformance, numberOfYears).toFixed(2)) : null;
+                const cagrGerman = showGerman ? parseFloat(calculateCAGR(firstYearData.germanPerformance, lastYearData.germanPerformance, numberOfYears).toFixed(2)) : null;
 
-                // Draw Total Performance line if enabled
-                if (showTotal) {
+                // Draw German Performance line if enabled
+                if (showGerman) {
                     svg.append("path")
                         .datum(company.revenueData)
                         .attr("fill", "none")
                         .attr("stroke", company.color)
                         .attr("stroke-width", 1.5)
-                        .attr("d", line);
+                        .attr("d", germanLine);
 
-                    // Add dots and tooltips for Total Performance
-                    svg.selectAll(`circle.total-point-${i}`)
+                    // Add dots and tooltips for German Performance
+                    svg.selectAll(`circle.german-point-${i}`)
                         .data(company.revenueData)
                         .enter()
                         .append("circle")
-                        .attr("class", `total-point-${i}`)
+                        .attr("class", `german-point-${i}`)
                         .attr("cx", d => xScale(d.year))
-                        .attr("cy", d => yScale(d.totalPerformance))
+                        .attr("cy", d => yScale(d.germanPerformance))
                         .attr("r", 4)
                         .attr("fill", company.color)
                         .attr("stroke", "white")
@@ -292,7 +300,7 @@
                             tooltip.style("display", "block")
                                 .html(`<strong>Company:</strong> ${company.company}<br>
                                        <strong>Year:</strong> ${d.year}<br>
-                                       <strong>Total Performance (Million Euros):</strong> €${d.totalPerformance.toLocaleString()}`)
+                                       <strong>German Performance (Million Euros):</strong> €${d.germanPerformance.toLocaleString()}`)
                                 .style("left", (event.pageX + 15) + "px")
                                 .style("top", (event.pageY - 15) + "px");
                         })
@@ -304,13 +312,13 @@
                             tooltip.style("display", "none");
                         });
 
-                    // Add the company name and CAGR at the end of the Total Performance line
+                    // Add the company name and CAGR at the end of the German Performance line
                     svg.append("text")
-                        .attr("x", xScale(lastYearData.year) + 15) // Shift right more for clarity
-                        .attr("y", yScale(lastYearData.totalPerformance))
+                        .attr("x", xScale(lastYearData.year) + 15)
+                        .attr("y", yScale(lastYearData.germanPerformance))
                         .attr("fill", company.color)
                         .attr("alignment-baseline", "middle")
-                        .text(`${company.company} (CAGR: ${cagrTotal}%)`);
+                        .text(`${company.company} German (${cagrGerman}%)`);
                 }
 
                 // Draw Foreign Performance line if enabled
@@ -359,37 +367,37 @@
                         .attr("fill", company.color)
                         .attr("alignment-baseline", "middle")
                         .attr("opacity", 0.7)
-                        .text(`${company.company} Foreign (CAGR: ${cagrForeign}%)`);
+                        .text(`${company.company} Foreign (${cagrForeign}%)`);
                 }
 
-                // Draw German Performance line if enabled
-                if (showGerman) {
+                // Draw Total Performance line if enabled
+                if (showTotal) {
                     svg.append("path")
                         .datum(company.revenueData)
                         .attr("fill", "none")
                         .attr("stroke", company.color)
                         .attr("stroke-width", 1.5)
+                        .attr("stroke-dasharray", "6 2 2 2")
                         .attr("opacity", 0.5)
-                        .attr("d", germanLine);
+                        .attr("d", line);
 
-                    // Add dots and tooltips for German Performance
-                    svg.selectAll(`circle.german-point-${i}`)
+                    // Add dots and tooltips for Total Performance
+                    svg.selectAll(`circle.total-point-${i}`)
                         .data(company.revenueData)
                         .enter()
                         .append("circle")
-                        .attr("class", `german-point-${i}`)
+                        .attr("class", `total-point-${i}`)
                         .attr("cx", d => xScale(d.year))
-                        .attr("cy", d => yScale(d.germanPerformance))
+                        .attr("cy", d => yScale(d.totalPerformance))
                         .attr("r", 4)
                         .attr("fill", company.color)
                         .attr("stroke", "white")
                         .attr("stroke-width", 1)
-                        .attr("opacity", 0.5)
                         .on("mouseover", function(event, d) {
                             tooltip.style("display", "block")
                                 .html(`<strong>Company:</strong> ${company.company}<br>
                                        <strong>Year:</strong> ${d.year}<br>
-                                       <strong>German Performance (Million Euros):</strong> €${d.germanPerformance.toLocaleString()}`)
+                                       <strong>Total Performance (Million Euros):</strong> €${d.totalPerformance.toLocaleString()}`)
                                 .style("left", (event.pageX + 15) + "px")
                                 .style("top", (event.pageY - 15) + "px");
                         })
@@ -401,19 +409,16 @@
                             tooltip.style("display", "none");
                         });
 
-                    // Add the company name and CAGR at the end of the German Performance line
+                    // Add the company name and CAGR at the end of the Total Performance line
                     svg.append("text")
-                        .attr("x", xScale(lastYearData.year) + 15)
-                        .attr("y", yScale(lastYearData.germanPerformance))
+                        .attr("x", xScale(lastYearData.year) + 15) // Shift right more for clarity
+                        .attr("y", yScale(lastYearData.totalPerformance))
                         .attr("fill", company.color)
                         .attr("alignment-baseline", "middle")
-                        .attr("opacity", 0.5)
-                        .text(`${company.company} German (CAGR: ${cagrGerman}%)`);
+                        .text(`${company.company} (${cagrTotal}%)`);
                 }
             });
         }
-    });
     </script>
-
 </body>
 </html>
