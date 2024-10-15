@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scatter Plot: CAGR vs Revenue</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="data.js"></script> <!-- Link to your data.js file -->
+    <script>
+        async function loadData() {
+            const response = await fetch('data.json');
+            const jsonData = await response.json();
+            return jsonData;
+        }
+    </script>
     <style>
         body, html {
             margin: 0;
@@ -94,9 +100,11 @@
     <button id="clearButton">Clear</button>
 
     <h3>Toggle Performance Lines</h3>
-    <label><input type="checkbox" id="toggleTotal" checked> Total Performance (Blue)</label><br>
-    <label><input type="checkbox" id="toggleForeign" checked> Foreign Performance (Green)</label><br>
-    <label><input type="checkbox" id="toggleGerman" checked> German Performance (Orange)</label>
+    <label><input type="checkbox" id="toggleGerman" checked> German Performance (Orange)</label><br>
+    <label><input type="checkbox" id="toggleForeign"> Foreign Performance (Green)</label><br>
+    <label><input type="checkbox" id="toggleTotal"> Total Performance (Blue)</label>
+    
+    
 
     <h3>Y-Axis Scale</h3>
     <label><input type="checkbox" id="toggleLogScale"> Logarithmic Scale</label><br>
@@ -108,13 +116,21 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    let jsonData = typeof companyData !== 'undefined' ? companyData : null;
+document.addEventListener("DOMContentLoaded", async function() {
+    let jsonData = await loadData();
 
     const selectedCompanies = new Set();
-    let showTotal = true;
-    let showForeign = true;
+    let showTotal = false;
+    let showForeign = false;
     let showGerman = true;
+
+    // Pre-select the top 20 companies based on total performance in 2023
+    jsonData.sort((a, b) => {
+        const aRevenue = a.Revenue[2023]?.["Total Performance (Million Euros)"] || 0;
+        const bRevenue = b.Revenue[2023]?.["Total Performance (Million Euros)"] || 0;
+        return bRevenue - aRevenue;
+    });
+    jsonData.slice(0, 20).forEach(company => selectedCompanies.add(company.Company));
 
     // Set up checkboxes for toggling the display of lines
     document.getElementById('toggleTotal').addEventListener('change', function() {
@@ -138,10 +154,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function setupCompanySelect(data) {
         const companySelect = document.getElementById('companySelect');
-        data.forEach(company => {
+        data.forEach((company, index) => {
             const option = document.createElement('option');
             option.value = company.Company;
             option.textContent = company.Company;
+            if (index < 20) {
+                option.selected = true;
+            }
             companySelect.appendChild(option);
         });
 
@@ -158,6 +177,9 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    setupCompanySelect(jsonData);
+    renderChart(jsonData);
+
     function renderChart(data) {
         const svg = d3.select("svg"),
             width = svg.node().getBoundingClientRect().width,
@@ -173,14 +195,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 let totalPerformance = company.Revenue[2023] && company.Revenue[2023]["Total Performance (Million Euros)"];
                 let startingValue = company.Revenue[2011] && company.Revenue[2011]["Total Performance (Million Euros)"];
 
-                if (totalPerformance && startingValue && startingValue > 0) {
+                if (totalPerformance !== undefined && startingValue !== undefined && startingValue > 0) {
                     let totalCAGR = calculateCAGR(startingValue, totalPerformance, 2023 - 2011);
                     
-                    let foreignPerformance = totalPerformance * (company.Revenue[2023]["Foreign Performance (%)"] / 100) || 0;
+                    let foreignPerformance = (company.Revenue[2023]["Foreign Performance (%)"] !== undefined) ? totalPerformance * (company.Revenue[2023]["Foreign Performance (%)"] / 100) : 0;
                     let germanPerformance = totalPerformance - foreignPerformance;
 
-                    let foreignCAGR = calculateCAGR(startingValue * (company.Revenue[2011]["Foreign Performance (%)"] / 100), foreignPerformance, 2023 - 2011);
-                    let germanCAGR = calculateCAGR(startingValue * (1 - company.Revenue[2011]["Foreign Performance (%)"] / 100), germanPerformance, 2023 - 2011);
+                    let foreignCAGR = (company.Revenue[2011]["Foreign Performance (%)"] !== undefined) ? calculateCAGR(startingValue * (company.Revenue[2011]["Foreign Performance (%)"] / 100), foreignPerformance, 2023 - 2011) : 0;
+                    let germanCAGR = calculateCAGR(startingValue * (1 - (company.Revenue[2011]["Foreign Performance (%)"] || 0) / 100), germanPerformance, 2023 - 2011);
 
                     if (showTotal) {
                         companyDataList.push({
@@ -209,6 +231,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             }
         });
+
+        if (companyDataList.length === 0) {
+            return;
+        }
 
         const useLogScale = document.getElementById('toggleLogScale').checked;
 
@@ -249,45 +275,51 @@ document.addEventListener("DOMContentLoaded", function() {
             .attr("class", "axis-label");
 
         // Dashed red line at 0% CAGR
-        svg.append("line")
-            .attr("x1", xScale(0))
-            .attr("x2", xScale(0))
-            .attr("y1", margin.top)
-            .attr("y2", height - margin.bottom)
-            .attr("class", "dashed-line");
+        if (!isNaN(xScale(0))) {
+            svg.append("line")
+                .attr("x1", xScale(0))
+                .attr("x2", xScale(0))
+                .attr("y1", margin.top)
+                .attr("y2", height - margin.bottom)
+                .attr("class", "dashed-line");
+        }
 
         // Dashed green line for the average CAGR
         const avgCAGR = d3.mean(companyDataList, d => d.cagr);
-        svg.append("line")
-            .attr("x1", xScale(avgCAGR))
-            .attr("x2", xScale(avgCAGR))
-            .attr("y1", margin.top)
-            .attr("y2", height - margin.bottom)
-            .attr("class", "average-line");
+        if (!isNaN(avgCAGR)) {
+            svg.append("line")
+                .attr("x1", xScale(avgCAGR))
+                .attr("x2", xScale(avgCAGR))
+                .attr("y1", margin.top)
+                .attr("y2", height - margin.bottom)
+                .attr("class", "average-line");
 
-        svg.append("text")
-            .attr("x", xScale(avgCAGR) + 5)
-            .attr("y", margin.top + 15)
-            .attr("fill", "green")
-            .text(`Avg CAGR: ${avgCAGR.toFixed(2)}%`)
-            .attr("class", "axis-label");
+            svg.append("text")
+                .attr("x", xScale(avgCAGR) + 5)
+                .attr("y", margin.top + 15)
+                .attr("fill", "green")
+                .text(`Avg CAGR: ${avgCAGR.toFixed(2)}%`)
+                .attr("class", "axis-label");
+        }
 
         // Dashed green line for the average performance
         const avgPerformance = d3.mean(companyDataList, d => d.performance);
-        svg.append("line")
-            .attr("x1", margin.left)
-            .attr("x2", width - margin.right)
-            .attr("y1", yScale(avgPerformance))
-            .attr("y2", yScale(avgPerformance))
-            .attr("class", "average-line")
-            .attr("stroke-width", 1);
+        if (!isNaN(avgPerformance)) {
+            svg.append("line")
+                .attr("x1", margin.left)
+                .attr("x2", width - margin.right)
+                .attr("y1", yScale(avgPerformance))
+                .attr("y2", yScale(avgPerformance))
+                .attr("class", "average-line")
+                .attr("stroke-width", 1);
 
-        svg.append("text")
-            .attr("x", margin.left + 5)
-            .attr("y", yScale(avgPerformance) - 10)
-            .attr("fill", "green")
-            .text(`Avg Performance: ${avgPerformance.toFixed(2)} Million €`)
-            .attr("class", "axis-label");
+            svg.append("text")
+                .attr("x", margin.left + 5)
+                .attr("y", yScale(avgPerformance) - 10)
+                .attr("fill", "green")
+                .text(`Avg Performance: ${avgPerformance.toFixed(2)} Million €`)
+                .attr("class", "axis-label");
+        }
 
         const tooltip = d3.select("#tooltip");
 
@@ -331,9 +363,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         return ((Math.pow(finalValue / initialValue, 1 / numberOfYears) - 1) * 100);
     }
-
-    renderChart(jsonData);
-    setupCompanySelect(jsonData);
 });
 </script>
 
