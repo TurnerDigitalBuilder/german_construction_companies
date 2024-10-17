@@ -79,6 +79,11 @@
             text-decoration: none;
             color: blue;
         }
+
+        #page-switcher {
+    /* position: relative; Ensure it's positioned */
+    z-index: 1000;      /* Set a high z-index to ensure it's above other layers */
+}
     </style>
 </head>
 
@@ -543,20 +548,23 @@
                             .attr("stroke", "white")
                             .attr("stroke-width", 1)
                             .on("mouseover", function (event, d) {
-                                tooltip.style("display", "block")
-                                    .html(`<strong>Company:</strong> ${company.company}<br>
-                                           <strong>Year:</strong> ${d.year}<br>
-                                           <strong>German Performance (Million Euros):</strong> €${d.germanPerformance.toLocaleString()}`)
-                                    .style("left", (event.pageX + 15) + "px")
-                                    .style("top", (event.pageY - 15) + "px");
-                            })
-                            .on("mousemove", function (event) {
-                                tooltip.style("left", (event.pageX + 15) + "px")
-                                    .style("top", (event.pageY - 15) + "px");
-                            })
-                            .on("mouseout", function () {
-                                tooltip.style("display", "none");
-                            });
+    const [x] = d3.pointer(event, svg.node()); // Only get the x-coordinate relative to SVG
+    tooltip.style("display", "block")
+        .html(`<strong>Company:</strong> ${company.company}<br>
+               <strong>Year:</strong> ${d.year}<br>
+               <strong>Performance (Million Euros):</strong> €${d.germanPerformance.toLocaleString()}`)
+        .style("left", (x + 100) + "px")  // Adjust x with a 10px offset
+        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
+})
+.on("mousemove", function (event) {
+    const [x] = d3.pointer(event, svg.node()); // Only adjust the x-coordinate
+    tooltip.style("left", (x + 100) + "px")  // Adjust x with a 10px offset
+        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
+})
+.on("mouseout", function () {
+    tooltip.style("display", "none");
+});
+
 
                         // Add the company name and CAGR at the end of the German Performance line
                         svg.append("text")
@@ -597,20 +605,22 @@
                             .attr("stroke", "white")
                             .attr("stroke-width", 1)
                             .on("mouseover", function (event, d) {
-                                tooltip.style("display", "block")
-                                    .html(`<strong>Company:</strong> ${company.company}<br>
-                                           <strong>Year:</strong> ${d.year}<br>
-                                           <strong>Foreign Performance (Million Euros):</strong> €${d.foreignPerformance.toLocaleString()}`)
-                                    .style("left", (event.pageX + 15) + "px")
-                                    .style("top", (event.pageY - 15) + "px");
-                            })
-                            .on("mousemove", function (event) {
-                                tooltip.style("left", (event.pageX + 15) + "px")
-                                    .style("top", (event.pageY - 15) + "px");
-                            })
-                            .on("mouseout", function () {
-                                tooltip.style("display", "none");
-                            });
+    const [x] = d3.pointer(event, svg.node()); // Only get the x-coordinate relative to SVG
+    tooltip.style("display", "block")
+        .html(`<strong>Company:</strong> ${company.company}<br>
+               <strong>Year:</strong> ${d.year}<br>
+               <strong>Performance (Million Euros):</strong> €${d.germanPerformance.toLocaleString()}`)
+        .style("left", (x + 100) + "px")  // Adjust x with a 10px offset
+        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
+})
+.on("mousemove", function (event) {
+    const [x] = d3.pointer(event, svg.node()); // Only adjust the x-coordinate
+    tooltip.style("left", (x + 100) + "px")  // Adjust x with a 10px offset
+        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
+})
+.on("mouseout", function () {
+    tooltip.style("display", "none");
+});
 
                         // Add the company name and CAGR at the end of the Foreign Performance line
                         svg.append("text")
@@ -653,20 +663,22 @@
                             .attr("stroke", "white")
                             .attr("stroke-width", 1)
                             .on("mouseover", function (event, d) {
-                                tooltip.style("display", "block")
-                                    .html(`<strong>Company:</strong> ${company.company}<br>
-                                           <strong>Year:</strong> ${d.year}<br>
-                                           <strong>Total Performance (Million Euros):</strong> €${d.totalPerformance.toLocaleString()}`)
-                                    .style("left", (event.pageX + 15) + "px")
-                                    .style("top", (event.pageY - 15) + "px");
-                            })
-                            .on("mousemove", function (event) {
-                                tooltip.style("left", (event.pageX + 15) + "px")
-                                    .style("top", (event.pageY - 15) + "px");
-                            })
-                            .on("mouseout", function () {
-                                tooltip.style("display", "none");
-                            });
+    const [x] = d3.pointer(event, svg.node()); // Only get the x-coordinate relative to SVG
+    tooltip.style("display", "block")
+        .html(`<strong>Company:</strong> ${company.company}<br>
+               <strong>Year:</strong> ${d.year}<br>
+               <strong>Performance (Million Euros):</strong> €${d.germanPerformance.toLocaleString()}`)
+        .style("left", (x + 100) + "px")  // Adjust x with a 10px offset
+        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
+})
+.on("mousemove", function (event) {
+    const [x] = d3.pointer(event, svg.node()); // Only adjust the x-coordinate
+    tooltip.style("left", (x + 100) + "px")  // Adjust x with a 10px offset
+        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
+})
+.on("mouseout", function () {
+    tooltip.style("display", "none");
+});
 
                         // Add the company name and CAGR at the end of the Total Performance line
                         svg.append("text")
