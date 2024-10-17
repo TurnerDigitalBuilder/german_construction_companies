@@ -108,7 +108,7 @@
                 "Employees (Yearly Average)": 75449
             }
         },
-        "Color": "rgb(2, 74, 148)"
+        "Color": "rgb(0, 0, 0)"
     },
     {
         "Company": "Strabag",
@@ -447,6 +447,94 @@
         "Company": "Zech Group",
         "Location": "Bremen",
         "Revenue": {
+            "2011": {
+                "Total Performance (Million Euros)": 960,
+                "Change from Previous Year (%)": 28.9,
+                "Foreign Performance (%)": null,
+                "Pre-tax Result (Million Euros)": null,
+                "Rank": 10,
+                "Employees (Yearly Average)": 2900
+            },
+            "2012": {
+                "Total Performance (Million Euros)": 1279,
+                "Change from Previous Year (%)": 33.2,
+                "Foreign Performance (%)": 26.4,
+                "Pre-tax Result (Million Euros)": 13,
+                "Rank": 8,
+                "Employees (Yearly Average)": 3500
+            },
+            "2013": {
+                "Total Performance (Million Euros)": 1465,
+                "Change from Previous Year (%)": 14.5,
+                "Foreign Performance (%)": 22.2,
+                "Pre-tax Result (Million Euros)": 24,
+                "Rank": 8,
+                "Employees (Yearly Average)": 6000
+            },
+            "2014": {
+                "Total Performance (Million Euros)": 1400,
+                "Change from Previous Year (%)": -4.4,
+                "Foreign Performance (%)": 17,
+                "Pre-tax Result (Million Euros)": 93,
+                "Rank": 8,
+                "Employees (Yearly Average)": 6200
+            },
+            "2015": {
+                "Total Performance (Million Euros)": 1470,
+                "Change from Previous Year (%)": 5,
+                "Foreign Performance (%)": 17,
+                "Pre-tax Result (Million Euros)": 70,
+                "Rank": 8,
+                "Employees (Yearly Average)": 6800
+            },
+            "2016": {
+                "Total Performance (Million Euros)": 1780,
+                "Change from Previous Year (%)": 21.1,
+                "Foreign Performance (%)": 25,
+                "Pre-tax Result (Million Euros)": 57.4,
+                "Rank": 5,
+                "Employees (Yearly Average)": 9327
+            },
+            "2017": {
+                "Total Performance (Million Euros)": 1964,
+                "Change from Previous Year (%)": 10.3,
+                "Foreign Performance (%)": 13,
+                "Pre-tax Result (Million Euros)": 48.2,
+                "Rank": 5,
+                "Employees (Yearly Average)": 8071
+            },
+            "2018": {
+                "Total Performance (Million Euros)": 1838,
+                "Change from Previous Year (%)": -6.4,
+                "Foreign Performance (%)": 16,
+                "Pre-tax Result (Million Euros)": 115.3,
+                "Rank": 5,
+                "Employees (Yearly Average)": 5516
+            },
+            "2019": {
+                "Total Performance (Million Euros)": 2260,
+                "Change from Previous Year (%)": 23,
+                "Foreign Performance (%)": 10,
+                "Pre-tax Result (Million Euros)": 81.2,
+                "Rank": 6,
+                "Employees (Yearly Average)": 9004
+            },
+            "2020": {
+                "Total Performance (Million Euros)": 2870,
+                "Change from Previous Year (%)": 27,
+                "Foreign Performance (%)": 10,
+                "Pre-tax Result (Million Euros)": 92.5,
+                "Rank": 5,
+                "Employees (Yearly Average)": 11348
+            },
+            "2021": {
+                "Total Performance (Million Euros)": 3480,
+                "Change from Previous Year (%)": 21.3,
+                "Foreign Performance (%)": 5,
+                "Pre-tax Result (Million Euros)": 101,
+                "Rank": 6,
+                "Employees (Yearly Average)": 12067
+            },
             "2022": {
                 "Total Performance (Million Euros)": 4300,
                 "Change from Previous Year (%)": 23.6,
@@ -462,94 +550,6 @@
                 "Pre-tax Result (Million Euros)": 92,
                 "Rank": 5,
                 "Employees (Yearly Average)": 13614
-            },
-            "2021": {
-                "Total Performance (Million Euros)": 3480,
-                "Change from Previous Year (%)": 21.3,
-                "Foreign Performance (%)": 5,
-                "Pre-tax Result (Million Euros)": 101,
-                "Rank": 6,
-                "Employees (Yearly Average)": 12067
-            },
-            "2020": {
-                "Total Performance (Million Euros)": 2870,
-                "Change from Previous Year (%)": 27,
-                "Foreign Performance (%)": 10,
-                "Pre-tax Result (Million Euros)": 92.5,
-                "Rank": 5,
-                "Employees (Yearly Average)": 11348
-            },
-            "2018": {
-                "Total Performance (Million Euros)": 1838,
-                "Change from Previous Year (%)": -6.4,
-                "Foreign Performance (%)": 16,
-                "Pre-tax Result (Million Euros)": 115.3,
-                "Rank": 5,
-                "Employees (Yearly Average)": 5516
-            },
-            "2017": {
-                "Total Performance (Million Euros)": 1964,
-                "Change from Previous Year (%)": 10.3,
-                "Foreign Performance (%)": 13,
-                "Pre-tax Result (Million Euros)": 48.2,
-                "Rank": 5,
-                "Employees (Yearly Average)": 8071
-            },
-            "2016": {
-                "Total Performance (Million Euros)": 1780,
-                "Change from Previous Year (%)": 21.1,
-                "Foreign Performance (%)": 25,
-                "Pre-tax Result (Million Euros)": 57.4,
-                "Rank": 5,
-                "Employees (Yearly Average)": 9327
-            },
-            "2015": {
-                "Total Performance (Million Euros)": 1470,
-                "Change from Previous Year (%)": 5,
-                "Foreign Performance (%)": 17,
-                "Pre-tax Result (Million Euros)": 70,
-                "Rank": 8,
-                "Employees (Yearly Average)": 6800
-            },
-            "2014": {
-                "Total Performance (Million Euros)": 1400,
-                "Change from Previous Year (%)": -4.4,
-                "Foreign Performance (%)": 17,
-                "Pre-tax Result (Million Euros)": 93,
-                "Rank": 8,
-                "Employees (Yearly Average)": 6200
-            },
-            "2011": {
-                "Total Performance (Million Euros)": 960,
-                "Change from Previous Year (%)": 28.9,
-                "Foreign Performance (%)": null,
-                "Pre-tax Result (Million Euros)": null,
-                "Rank": 10,
-                "Employees (Yearly Average)": 2900
-            },
-            "2019": {
-                "Total Performance (Million Euros)": 2260,
-                "Change from Previous Year (%)": 23,
-                "Foreign Performance (%)": 10,
-                "Pre-tax Result (Million Euros)": 81.2,
-                "Rank": 6,
-                "Employees (Yearly Average)": 9004
-            },
-            "2013": {
-                "Total Performance (Million Euros)": 1465,
-                "Change from Previous Year (%)": 14.5,
-                "Foreign Performance (%)": 22.2,
-                "Pre-tax Result (Million Euros)": 24,
-                "Rank": 8,
-                "Employees (Yearly Average)": 6000
-            },
-            "2012": {
-                "Total Performance (Million Euros)": 1279,
-                "Change from Previous Year (%)": 33.2,
-                "Foreign Performance (%)": 26.4,
-                "Pre-tax Result (Million Euros)": 13,
-                "Rank": 8,
-                "Employees (Yearly Average)": 3500
             }
         },
         "Color": "rgb(236, 44, 32)"
