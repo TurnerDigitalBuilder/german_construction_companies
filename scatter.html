@@ -323,29 +323,35 @@ document.addEventListener("DOMContentLoaded", async function() {
 
         const tooltip = d3.select("#tooltip");
 
-        svg.selectAll("circle")
-            .data(companyDataList)
-            .enter()
-            .append("circle")
-            .attr("cx", d => xScale(d.cagr))
-            .attr("cy", d => yScale(d.performance))
-            .attr("r", 5)
-            .attr("fill", (d) => {
-                if (d.type === "Total Performance") return "steelblue";
-                if (d.type === "Foreign Performance") return "green";
-                if (d.type === "German Performance") return "orange";
-            })
-            .on("mouseover", (event, d) => {
-                tooltip.style("display", "block")
-                    .html(`<strong>Company:</strong> ${d.company}<br><strong>Performance Type:</strong> ${d.type}<br><strong>Performance:</strong> ${d.performance.toFixed(2)} Million €<br><strong>CAGR:</strong> ${d.cagr.toFixed(2)}%`);
-            })
-            .on("mousemove", (event) => {
-                tooltip.style("left", (event.pageX + 10) + "px")
-                    .style("top", (event.pageY - 20) + "px");
-            })
-            .on("mouseout", () => {
-                tooltip.style("display", "none");
-            });
+        // Define a scale for the bubble size (radius)
+const revenueScale = d3.scaleSqrt() // Sqrt scale for better visual proportions
+    .domain([d3.min(companyDataList, d => d.performance), d3.max(companyDataList, d => d.performance)])
+    .range([5, 20]); // Min and max radius values
+
+// Create the circles for the scatter plot with size based on revenue
+svg.selectAll("circle")
+    .data(companyDataList)
+    .enter()
+    .append("circle")
+    .attr("cx", d => xScale(d.cagr))
+    .attr("cy", d => yScale(d.performance))
+    .attr("r", d => revenueScale(d.performance)) // Set the radius based on revenue
+    .attr("fill", (d) => {
+        if (d.type === "Total Performance") return "steelblue";
+        if (d.type === "Foreign Performance") return "green";
+        if (d.type === "German Performance") return "orange";
+    })
+    .on("mouseover", (event, d) => {
+        tooltip.style("display", "block")
+            .html(`<strong>Company:</strong> ${d.company}<br><strong>Performance Type:</strong> ${d.type}<br><strong>Performance:</strong> ${d.performance.toFixed(2)} Million €<br><strong>CAGR:</strong> ${d.cagr.toFixed(2)}%`);
+    })
+    .on("mousemove", (event) => {
+        tooltip.style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 20) + "px");
+    })
+    .on("mouseout", () => {
+        tooltip.style("display", "none");
+    });
 
         svg.selectAll(".company-label")
             .data(companyDataList)
