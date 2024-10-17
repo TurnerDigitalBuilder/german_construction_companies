@@ -81,9 +81,10 @@
         }
 
         #page-switcher {
-    /* position: relative; Ensure it's positioned */
-    z-index: 1000;      /* Set a high z-index to ensure it's above other layers */
-}
+            /* position: relative; Ensure it's positioned */
+            z-index: 1000;
+            /* Set a high z-index to ensure it's above other layers */
+        }
     </style>
 </head>
 
@@ -156,189 +157,189 @@
         });
 
         function setupCompanySelect(data) {
-    const companySelect = document.getElementById('companySelect');
-    companySelect.innerHTML = ''; // Clear existing options
+            const companySelect = document.getElementById('companySelect');
+            companySelect.innerHTML = ''; // Clear existing options
 
-    data.forEach((company) => {
-        const option = document.createElement('option');
-        option.value = company.Company;
+            data.forEach((company) => {
+                const option = document.createElement('option');
+                option.value = company.Company;
 
-        // Build revenueData similar to renderChart
-        let revenueData = [];
-        for (let year = startYear; year <= endYear; year++) {
-            let totalPerformance = +company.Revenue[year]?.["Total Performance (Million Euros)"];
-            let foreignPercentage = company.Revenue[year]?.["Foreign Performance (%)"];
+                // Build revenueData similar to renderChart
+                let revenueData = [];
+                for (let year = startYear; year <= endYear; year++) {
+                    let totalPerformance = +company.Revenue[year]?.["Total Performance (Million Euros)"];
+                    let foreignPercentage = company.Revenue[year]?.["Foreign Performance (%)"];
 
-            if (!isNaN(totalPerformance) && totalPerformance !== null) {
-                foreignPercentage = +foreignPercentage;
+                    if (!isNaN(totalPerformance) && totalPerformance !== null) {
+                        foreignPercentage = +foreignPercentage;
 
-                let foreignPerformance = null;
-                let germanPerformance = null;
+                        let foreignPerformance = null;
+                        let germanPerformance = null;
 
-                if (!isNaN(foreignPercentage) && foreignPercentage !== null) {
-                    foreignPerformance = totalPerformance * (foreignPercentage / 100);
-                    germanPerformance = totalPerformance * ((100 - foreignPercentage) / 100);
+                        if (!isNaN(foreignPercentage) && foreignPercentage !== null) {
+                            foreignPerformance = totalPerformance * (foreignPercentage / 100);
+                            germanPerformance = totalPerformance * ((100 - foreignPercentage) / 100);
+                        }
+
+                        revenueData.push({
+                            year: year,
+                            totalPerformance: totalPerformance,
+                            foreignPerformance: foreignPerformance,
+                            germanPerformance: germanPerformance
+                        });
+                    }
                 }
 
-                revenueData.push({
-                    year: year,
-                    totalPerformance: totalPerformance,
-                    foreignPerformance: foreignPerformance,
-                    germanPerformance: germanPerformance
-                });
-            }
-        }
+                // Function to calculate CAGR and average revenue for a given performance type
+                function calculateCAGRAndAverage(performanceType) {
+                    let filteredData = revenueData.filter(d => {
+                        let value = d[performanceType];
+                        return value !== null && !isNaN(value) && value > 0;
+                    });
 
-        // Function to calculate CAGR and average revenue for a given performance type
-        function calculateCAGRAndAverage(performanceType) {
-            let filteredData = revenueData.filter(d => {
-                let value = d[performanceType];
-                return value !== null && !isNaN(value) && value > 0;
+                    if (filteredData.length < 2) {
+                        return { cagr: null, avgRevenue: null };
+                    }
+
+                    let firstYearData = filteredData[0];
+                    let lastYearData = filteredData[filteredData.length - 1];
+                    let numberOfYears = lastYearData.year - firstYearData.year;
+
+                    if (numberOfYears <= 0) {
+                        return { cagr: null, avgRevenue: null };
+                    }
+
+                    let sumRevenue = filteredData.reduce((sum, d) => sum + d[performanceType], 0);
+                    let avgRevenue = sumRevenue / filteredData.length;
+
+                    let cagr = calculateCAGR(firstYearData[performanceType], lastYearData[performanceType], numberOfYears);
+
+                    return { cagr: cagr, avgRevenue: avgRevenue };
+                }
+
+                let selectedCAGR = "N/A";
+                let selectedAverageRevenue = "N/A";
+
+                const formatCAGR = (value) => (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : "N/A";
+                const formatRevenue = (value) => (typeof value === 'number' && !isNaN(value)) ? value.toLocaleString() : "N/A";
+
+                if (showGerman) {
+                    let { cagr, avgRevenue } = calculateCAGRAndAverage("germanPerformance");
+                    selectedCAGR = formatCAGR(cagr);
+                    selectedAverageRevenue = formatRevenue(avgRevenue);
+                } else if (showForeign) {
+                    let { cagr, avgRevenue } = calculateCAGRAndAverage("foreignPerformance");
+                    selectedCAGR = formatCAGR(cagr);
+                    selectedAverageRevenue = formatRevenue(avgRevenue);
+                } else if (showTotal) {
+                    let { cagr, avgRevenue } = calculateCAGRAndAverage("totalPerformance");
+                    selectedCAGR = formatCAGR(cagr);
+                    selectedAverageRevenue = formatRevenue(avgRevenue);
+                }
+
+                // Update the option text
+                option.textContent = `${company.Company} (${selectedCAGR}%, €${selectedAverageRevenue})`;
+                companySelect.appendChild(option);
             });
 
-            if (filteredData.length < 2) {
-                return { cagr: null, avgRevenue: null };
+            // Add event listeners
+            companySelect.addEventListener('change', function () {
+                selectedCompanies.clear();
+                Array.from(this.selectedOptions).forEach(option => selectedCompanies.add(option.value));
+                renderChart(window.companyData);
+            });
+
+            document.getElementById('clearButton').addEventListener('click', function () {
+                selectedCompanies.clear();
+                Array.from(companySelect.options).forEach(option => option.selected = false);
+                renderChart(window.companyData);
+            });
+
+            // Sorting event listeners
+            document.getElementById('sortCAGRButton').addEventListener('click', function () {
+                sortCompanies('cagr');
+            });
+
+            document.getElementById('sortRevenueButton').addEventListener('click', function () {
+                sortCompanies('avgRevenue');
+            });
+
+            function sortCompanies(criteria) {
+                // Get selected performance type
+                let performanceType = showGerman ? "germanPerformance" :
+                    showForeign ? "foreignPerformance" :
+                        showTotal ? "totalPerformance" : null;
+
+                if (!performanceType) return; // Exit if no performance type is selected
+
+                // Sort the data
+                window.companyData.sort((a, b) => {
+                    const aStats = calculateCAGRAndAverage(a, performanceType);
+                    const bStats = calculateCAGRAndAverage(b, performanceType);
+
+                    if (criteria === 'cagr') {
+                        return (bStats.cagr || 0) - (aStats.cagr || 0); // Sort by CAGR descending
+                    } else if (criteria === 'avgRevenue') {
+                        return (bStats.avgRevenue || 0) - (aStats.avgRevenue || 0); // Sort by Avg Revenue descending
+                    }
+                });
+
+                setupCompanySelect(window.companyData); // Re-render the sorted list
             }
 
-            let firstYearData = filteredData[0];
-            let lastYearData = filteredData[filteredData.length - 1];
-            let numberOfYears = lastYearData.year - firstYearData.year;
+            function calculateCAGRAndAverage(company, performanceType) {
+                // Use the existing logic for calculating CAGR and Avg Revenue
+                let revenueData = []; // Build revenueData from company.Revenue similarly to the renderChart function
+                for (let year = startYear; year <= endYear; year++) {
+                    let totalPerformance = +company.Revenue[year]?.["Total Performance (Million Euros)"];
+                    let foreignPercentage = company.Revenue[year]?.["Foreign Performance (%)"];
 
-            if (numberOfYears <= 0) {
-                return { cagr: null, avgRevenue: null };
-            }
+                    if (!isNaN(totalPerformance) && totalPerformance !== null) {
+                        foreignPercentage = +foreignPercentage;
 
-            let sumRevenue = filteredData.reduce((sum, d) => sum + d[performanceType], 0);
-            let avgRevenue = sumRevenue / filteredData.length;
+                        let foreignPerformance = null;
+                        let germanPerformance = null;
 
-            let cagr = calculateCAGR(firstYearData[performanceType], lastYearData[performanceType], numberOfYears);
+                        if (!isNaN(foreignPercentage) && foreignPercentage !== null) {
+                            foreignPerformance = totalPerformance * (foreignPercentage / 100);
+                            germanPerformance = totalPerformance * ((100 - foreignPercentage) / 100);
+                        }
 
-            return { cagr: cagr, avgRevenue: avgRevenue };
-        }
-
-        let selectedCAGR = "N/A";
-        let selectedAverageRevenue = "N/A";
-
-        const formatCAGR = (value) => (typeof value === 'number' && !isNaN(value)) ? value.toFixed(2) : "N/A";
-        const formatRevenue = (value) => (typeof value === 'number' && !isNaN(value)) ? value.toLocaleString() : "N/A";
-
-        if (showGerman) {
-            let { cagr, avgRevenue } = calculateCAGRAndAverage("germanPerformance");
-            selectedCAGR = formatCAGR(cagr);
-            selectedAverageRevenue = formatRevenue(avgRevenue);
-        } else if (showForeign) {
-            let { cagr, avgRevenue } = calculateCAGRAndAverage("foreignPerformance");
-            selectedCAGR = formatCAGR(cagr);
-            selectedAverageRevenue = formatRevenue(avgRevenue);
-        } else if (showTotal) {
-            let { cagr, avgRevenue } = calculateCAGRAndAverage("totalPerformance");
-            selectedCAGR = formatCAGR(cagr);
-            selectedAverageRevenue = formatRevenue(avgRevenue);
-        }
-
-        // Update the option text
-        option.textContent = `${company.Company} (${selectedCAGR}%, €${selectedAverageRevenue})`;
-        companySelect.appendChild(option);
-    });
-
-    // Add event listeners
-    companySelect.addEventListener('change', function () {
-        selectedCompanies.clear();
-        Array.from(this.selectedOptions).forEach(option => selectedCompanies.add(option.value));
-        renderChart(window.companyData);
-    });
-
-    document.getElementById('clearButton').addEventListener('click', function () {
-        selectedCompanies.clear();
-        Array.from(companySelect.options).forEach(option => option.selected = false);
-        renderChart(window.companyData);
-    });
-
-    // Sorting event listeners
-    document.getElementById('sortCAGRButton').addEventListener('click', function () {
-        sortCompanies('cagr');
-    });
-
-    document.getElementById('sortRevenueButton').addEventListener('click', function () {
-        sortCompanies('avgRevenue');
-    });
-
-    function sortCompanies(criteria) {
-        // Get selected performance type
-        let performanceType = showGerman ? "germanPerformance" :
-                              showForeign ? "foreignPerformance" :
-                              showTotal ? "totalPerformance" : null;
-
-        if (!performanceType) return; // Exit if no performance type is selected
-
-        // Sort the data
-        window.companyData.sort((a, b) => {
-            const aStats = calculateCAGRAndAverage(a, performanceType);
-            const bStats = calculateCAGRAndAverage(b, performanceType);
-
-            if (criteria === 'cagr') {
-                return (bStats.cagr || 0) - (aStats.cagr || 0); // Sort by CAGR descending
-            } else if (criteria === 'avgRevenue') {
-                return (bStats.avgRevenue || 0) - (aStats.avgRevenue || 0); // Sort by Avg Revenue descending
-            }
-        });
-
-        setupCompanySelect(window.companyData); // Re-render the sorted list
-    }
-
-    function calculateCAGRAndAverage(company, performanceType) {
-        // Use the existing logic for calculating CAGR and Avg Revenue
-        let revenueData = []; // Build revenueData from company.Revenue similarly to the renderChart function
-        for (let year = startYear; year <= endYear; year++) {
-            let totalPerformance = +company.Revenue[year]?.["Total Performance (Million Euros)"];
-            let foreignPercentage = company.Revenue[year]?.["Foreign Performance (%)"];
-
-            if (!isNaN(totalPerformance) && totalPerformance !== null) {
-                foreignPercentage = +foreignPercentage;
-
-                let foreignPerformance = null;
-                let germanPerformance = null;
-
-                if (!isNaN(foreignPercentage) && foreignPercentage !== null) {
-                    foreignPerformance = totalPerformance * (foreignPercentage / 100);
-                    germanPerformance = totalPerformance * ((100 - foreignPercentage) / 100);
+                        revenueData.push({
+                            year: year,
+                            totalPerformance: totalPerformance,
+                            foreignPerformance: foreignPerformance,
+                            germanPerformance: germanPerformance
+                        });
+                    }
                 }
 
-                revenueData.push({
-                    year: year,
-                    totalPerformance: totalPerformance,
-                    foreignPerformance: foreignPerformance,
-                    germanPerformance: germanPerformance
-                });
+                return calculateCAGRAndAverageForType(revenueData, performanceType);
+            }
+
+            function calculateCAGRAndAverageForType(revenueData, performanceType) {
+                // Existing logic for calculating CAGR and Average Revenue
+                let filteredData = revenueData.filter(d => d[performanceType] !== null && !isNaN(d[performanceType]) && d[performanceType] > 0);
+                if (filteredData.length < 2) {
+                    return { cagr: null, avgRevenue: null };
+                }
+
+                let firstYearData = filteredData[0];
+                let lastYearData = filteredData[filteredData.length - 1];
+                let numberOfYears = lastYearData.year - firstYearData.year;
+
+                if (numberOfYears <= 0) {
+                    return { cagr: null, avgRevenue: null };
+                }
+
+                let sumRevenue = filteredData.reduce((sum, d) => sum + d[performanceType], 0);
+                let avgRevenue = sumRevenue / filteredData.length;
+
+                let cagr = calculateCAGR(firstYearData[performanceType], lastYearData[performanceType], numberOfYears);
+
+                return { cagr: cagr, avgRevenue: avgRevenue };
             }
         }
-
-        return calculateCAGRAndAverageForType(revenueData, performanceType);
-    }
-
-    function calculateCAGRAndAverageForType(revenueData, performanceType) {
-        // Existing logic for calculating CAGR and Average Revenue
-        let filteredData = revenueData.filter(d => d[performanceType] !== null && !isNaN(d[performanceType]) && d[performanceType] > 0);
-        if (filteredData.length < 2) {
-            return { cagr: null, avgRevenue: null };
-        }
-
-        let firstYearData = filteredData[0];
-        let lastYearData = filteredData[filteredData.length - 1];
-        let numberOfYears = lastYearData.year - firstYearData.year;
-
-        if (numberOfYears <= 0) {
-            return { cagr: null, avgRevenue: null };
-        }
-
-        let sumRevenue = filteredData.reduce((sum, d) => sum + d[performanceType], 0);
-        let avgRevenue = sumRevenue / filteredData.length;
-
-        let cagr = calculateCAGR(firstYearData[performanceType], lastYearData[performanceType], numberOfYears);
-
-        return { cagr: cagr, avgRevenue: avgRevenue };
-    }
-}
 
 
         function calculateCAGR(startValue, endValue, years) {
@@ -548,22 +549,23 @@
                             .attr("stroke", "white")
                             .attr("stroke-width", 1)
                             .on("mouseover", function (event, d) {
-    const [x] = d3.pointer(event, svg.node()); // Only get the x-coordinate relative to SVG
-    tooltip.style("display", "block")
-        .html(`<strong>Company:</strong> ${company.company}<br>
+                                const [x] = d3.pointer(event, svg.node());
+                                tooltip.style("display", "block")
+                                    .html(`<strong>Company:</strong> ${company.company}<br>
                <strong>Year:</strong> ${d.year}<br>
-               <strong>Performance (Million Euros):</strong> €${d.germanPerformance.toLocaleString()}`)
-        .style("left", (x + 100) + "px")  // Adjust x with a 10px offset
-        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
-})
-.on("mousemove", function (event) {
-    const [x] = d3.pointer(event, svg.node()); // Only adjust the x-coordinate
-    tooltip.style("left", (x + 100) + "px")  // Adjust x with a 10px offset
-        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
-})
-.on("mouseout", function () {
-    tooltip.style("display", "none");
-});
+               <strong>German Performance (Million Euros):</strong> €${d.germanPerformance.toLocaleString()}`)
+                                    .style("left", (x + 100) + "px")
+                                    .style("top", (event.pageY - 15) + "px");
+                            })
+
+                            .on("mousemove", function (event) {
+                                const [x] = d3.pointer(event, svg.node()); // Only adjust the x-coordinate
+                                tooltip.style("left", (x + 100) + "px")  // Adjust x with a 10px offset
+                                    .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
+                            })
+                            .on("mouseout", function () {
+                                tooltip.style("display", "none");
+                            });
 
 
                         // Add the company name and CAGR at the end of the German Performance line
@@ -605,22 +607,23 @@
                             .attr("stroke", "white")
                             .attr("stroke-width", 1)
                             .on("mouseover", function (event, d) {
-    const [x] = d3.pointer(event, svg.node()); // Only get the x-coordinate relative to SVG
-    tooltip.style("display", "block")
-        .html(`<strong>Company:</strong> ${company.company}<br>
+                                const [x] = d3.pointer(event, svg.node());
+                                tooltip.style("display", "block")
+                                    .html(`<strong>Company:</strong> ${company.company}<br>
                <strong>Year:</strong> ${d.year}<br>
-               <strong>Performance (Million Euros):</strong> €${d.germanPerformance.toLocaleString()}`)
-        .style("left", (x + 100) + "px")  // Adjust x with a 10px offset
-        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
-})
-.on("mousemove", function (event) {
-    const [x] = d3.pointer(event, svg.node()); // Only adjust the x-coordinate
-    tooltip.style("left", (x + 100) + "px")  // Adjust x with a 10px offset
-        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
-})
-.on("mouseout", function () {
-    tooltip.style("display", "none");
-});
+               <strong>Foreign Performance (Million Euros):</strong> €${d.foreignPerformance.toLocaleString()}`)
+                                    .style("left", (x + 100) + "px")
+                                    .style("top", (event.pageY - 15) + "px");
+                            })
+
+                            .on("mousemove", function (event) {
+                                const [x] = d3.pointer(event, svg.node()); // Only adjust the x-coordinate
+                                tooltip.style("left", (x + 100) + "px")  // Adjust x with a 10px offset
+                                    .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
+                            })
+                            .on("mouseout", function () {
+                                tooltip.style("display", "none");
+                            });
 
                         // Add the company name and CAGR at the end of the Foreign Performance line
                         svg.append("text")
@@ -663,22 +666,23 @@
                             .attr("stroke", "white")
                             .attr("stroke-width", 1)
                             .on("mouseover", function (event, d) {
-    const [x] = d3.pointer(event, svg.node()); // Only get the x-coordinate relative to SVG
-    tooltip.style("display", "block")
-        .html(`<strong>Company:</strong> ${company.company}<br>
+                                const [x] = d3.pointer(event, svg.node());
+                                tooltip.style("display", "block")
+                                    .html(`<strong>Company:</strong> ${company.company}<br>
                <strong>Year:</strong> ${d.year}<br>
-               <strong>Performance (Million Euros):</strong> €${d.germanPerformance.toLocaleString()}`)
-        .style("left", (x + 100) + "px")  // Adjust x with a 10px offset
-        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
-})
-.on("mousemove", function (event) {
-    const [x] = d3.pointer(event, svg.node()); // Only adjust the x-coordinate
-    tooltip.style("left", (x + 100) + "px")  // Adjust x with a 10px offset
-        .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
-})
-.on("mouseout", function () {
-    tooltip.style("display", "none");
-});
+               <strong>Total Performance (Million Euros):</strong> €${d.totalPerformance.toLocaleString()}`)
+                                    .style("left", (x + 100) + "px")
+                                    .style("top", (event.pageY - 15) + "px");
+                            })
+
+                            .on("mousemove", function (event) {
+                                const [x] = d3.pointer(event, svg.node()); // Only adjust the x-coordinate
+                                tooltip.style("left", (x + 100) + "px")  // Adjust x with a 10px offset
+                                    .style("top", (event.pageY - 15) + "px");  // Keep the y-position logic the same
+                            })
+                            .on("mouseout", function () {
+                                tooltip.style("display", "none");
+                            });
 
                         // Add the company name and CAGR at the end of the Total Performance line
                         svg.append("text")
